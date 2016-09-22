@@ -8,8 +8,6 @@
 
 ## Usage
 
-Start the Java RMI registry:
-
 Start the server (Master):
 
 ```bash
@@ -21,3 +19,5 @@ Run the client (Worker):
 ```bash
 ./worker.sh
 ```
+
+Once some clients are connected, enter a number in the server to calculate the result.

@@ -14,6 +14,7 @@ public class Master implements MasterInterface {
         workers = new ArrayList<>();
     }
 
+    // Registers a worker
     @Override
     public boolean register(WorkerInterface worker) throws RemoteException {
         if (worker != null) {
@@ -25,6 +26,7 @@ public class Master implements MasterInterface {
         return false;
     }
 
+    // Creates a random vector of size n
     private static int[] randomVector(int n) {
         int[] vector = new int[n];
         Random random = new Random();

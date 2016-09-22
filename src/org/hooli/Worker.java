@@ -6,9 +6,10 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
-public class Worker implements WorkerInterface, Serializable {
+public class Worker implements WorkerInterface {
     private Worker() {}
 
+    // Calculate the dot product between two vectors.
     @Override
     public int dotProduct(int[] v1, int[] v2) throws RemoteException {
         // TODO: check vector lengths
@@ -31,7 +32,6 @@ public class Worker implements WorkerInterface, Serializable {
             Registry registry = LocateRegistry.getRegistry(host);
             MasterInterface stub = (MasterInterface) registry.lookup("Master");
 
-System.out.println(worker.getClass());
             if (!stub.register(worker)) {
                 System.err.println("Could not reach Master");
                 return;

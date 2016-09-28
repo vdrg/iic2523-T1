@@ -1,3 +1,4 @@
+#!/bin/bash
 mkdir -p build/classes
 CLASSPATH=$(readlink -f build/classes)
 

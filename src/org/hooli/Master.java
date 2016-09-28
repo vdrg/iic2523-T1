@@ -20,7 +20,6 @@ public class Master implements MasterInterface {
         if (worker != null) {
             workers.add(worker);
             System.out.println(workers.size() + "/3 workers registered.");
-            // if (workers.size() > 2)
             return true;
         }
         return false;
@@ -37,6 +36,8 @@ public class Master implements MasterInterface {
     }
 
     public static void main(String args[]) {
+        // TODO: Should it be only once?
+        // TODO: Block the user input if a worker dies and there are not three workers
 
         try {
             Master obj = new Master();
@@ -48,7 +49,7 @@ public class Master implements MasterInterface {
             System.out.println("Server ready.");
             System.out.println("Waiting for workers...");
 
-            // TODO: make it more elegant
+            // TODO: Wait for three workers
             // System.out.println("At least 3 workers must be connected.");
             System.out.println("Enter a number:");
             int n = System.in.read();
@@ -60,7 +61,7 @@ public class Master implements MasterInterface {
             // Repeat until workers agree
             while (finalResult == null) {
                 HashMap<Integer, Integer> results = new HashMap<>();
-
+                // TODO: Should select only three workers
                 for (WorkerInterface worker : obj.workers) {
                     int result = worker.dotProduct(v1, v2);
                     Integer count = results.get(result);

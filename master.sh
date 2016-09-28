@@ -1,3 +1,4 @@
+#!/bin/bash
 CLASSPATH=$(readlink -f build/classes)
 
 (cd $CLASSPATH && rmiregistry &)

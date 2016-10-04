@@ -1,5 +1,6 @@
 package org.hooli;
 
+import java.net.InetAddress;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -46,7 +47,7 @@ public class Master implements MasterInterface {
             // Bind the remote object's stub in the registry
             Registry registry = LocateRegistry.getRegistry();
             registry.bind("Master", stub);
-            System.out.println("Server ready.");
+            System.out.println("Server listening at " + InetAddress.getLocalHost());
             System.out.println("Waiting for workers...");
 
             // TODO: Wait for three workers

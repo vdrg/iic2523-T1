@@ -47,7 +47,7 @@ public class Master implements MasterInterface {
             // Bind the remote object's stub in the registry
             Registry registry = LocateRegistry.getRegistry();
             registry.bind("Master", stub);
-            System.out.println("Server listening at " + InetAddress.getLocalHost());
+            System.out.println("Server listening at port 1099");
             System.out.println("Waiting for workers...");
 
             // TODO: Wait for three workers

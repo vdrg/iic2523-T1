@@ -1,6 +1,5 @@
 package org.hooli;
 
-import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -9,12 +8,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static java.lang.System.in;
-import static java.lang.System.out;
-
 public class Master implements MasterInterface {
-    ArrayList<WorkerInterface> workers;
-    private Random random = new Random();
+    private final int WORKERS_PER_REQUEST = 3;
+
+    private final ArrayList<WorkerInterface> workers;
+    private static Random random = new Random();
 
     public Master() {
         workers = new ArrayList<>();
@@ -22,6 +20,7 @@ public class Master implements MasterInterface {
 
     /**
      * Registers a worker
+     *
      * @param worker
      * @return true if register was successful
      * @throws RemoteException
@@ -30,68 +29,58 @@ public class Master implements MasterInterface {
     public boolean register(WorkerInterface worker) throws RemoteException {
         if (worker != null) {
             this.workers.add(worker);
-            System.out.println(this.workers.size() + "/3 workers registered.");
+            System.out.printf("%d/%d workers registered.\n",
+                    this.workers.size(), WORKERS_PER_REQUEST);
+            synchronized (this){
+                if (this.workers.size() >= WORKERS_PER_REQUEST) {
+                    this.notifyAll();
+                }
+            }
             return true;
         }
         return false;
     }
 
+    private boolean enoughWorkers() {
+        return this.workers.size() >= WORKERS_PER_REQUEST;
+    }
+
+
     /**
-     * Returns N random workers. If N >= # workers, returns a shallow copy of the actual array of workers
-     * @param n quantity of workers
-     * @return N random workers
+     * Returns @WORKERS_PER_REQUEST random workers.
+     *
+     * @return @WORKERS_PER_REQUEST random workers
+     * @throws IllegalStateException
      */
     @SuppressWarnings("unchecked")
-    private List<WorkerInterface> getWorkers(int n){
-        System.out.printf("Choosing %d workers of %d available\n", n, this.workers.size());
-        if(n >= this.workers.size()){
-            return (List<WorkerInterface>) this.workers.clone();
+    private List<WorkerInterface> getWorkers() throws IllegalStateException {
+        System.out.printf("Choosing %d workers of %d available\n",
+                WORKERS_PER_REQUEST, this.workers.size());
+        if (!enoughWorkers()) {
+            throw new IllegalStateException("Not enough workers");
         }
-        IntStream indexes = random.ints(0, this.workers.size() - 1);
-        return indexes.mapToObj(i -> this.workers.get(i)).collect(Collectors.toList());
+
+        IntStream indexes = random.ints(WORKERS_PER_REQUEST, 0, this.workers.size() - 1);
+        return indexes.mapToObj(this.workers::get).collect(Collectors.toList());
     }
 
-    private List<WorkerInterface> getWorkers(){
-        return getWorkers(3);
-    }
-
-    private void removeWorker(WorkerInterface worker){
+    private void removeWorker(WorkerInterface worker) {
         this.workers.remove(worker);
     }
 
-
-    private static Master master;
-
-    /**
-     * Creates a random vector of size n
-     * @param n
-     * @return int array of size n
-     */
-    private static int[] randomVector(int n) {
-        int[] vector = new int[n];
-        Random random = new Random();
-        for (int i = 0; i < n; i++) {
-            vector[i] = random.nextInt();
-        }
-        return vector;
-    }
-
-    private static int compute(int n) throws IllegalStateException {
-        System.out.println("Preparing to send data...");
+    private int compute(int n) throws IllegalStateException {
         int[] v1 = randomVector(n);
         int[] v2 = randomVector(n);
         Integer finalResult = null;
 
         while (finalResult == null) {
             HashMap<Integer, Integer> results = new HashMap<>();
-            for (WorkerInterface worker : master.getWorkers()) {
-                try{
+            for (WorkerInterface worker : getWorkers()) {
+                try {
                     int result = worker.dotProduct(v1, v2);
-                    System.out.println("A worker returned " + result);
                     Integer count = results.get(result);
                     results.put(result, count != null ? count + 1 : 1);
-                }
-                catch(RemoteException e){
+                } catch (RemoteException e) {
                     master.removeWorker(worker);
                     throw new IllegalStateException("One of the selected workers has died");
                 }
@@ -110,16 +99,37 @@ public class Master implements MasterInterface {
         return finalResult;
     }
 
-    private static void userLoop(){
+    private static Master master;
+
+    /**
+     * Creates a random vector of size n
+     *
+     * @param n
+     * @return int array of size n
+     */
+    private static int[] randomVector(int n) {
+        int[] vector = new int[n];
+        for (int i = 0; i < n; i++) {
+            vector[i] = random.nextInt();
+        }
+        return vector;
+    }
+
+    @SuppressWarnings("InfiniteLoopStatement")
+    private static void userLoop() {
         Scanner in = new Scanner(System.in);
-        while(true){
-            try{
-                System.out.println("Enter a number:");
+        while (true) {
+            try {
+                synchronized (master){
+                    if (!master.enoughWorkers()) {
+                        master.wait();
+                    }
+                }
+                System.out.println("Please, enter a number:");
                 int n = in.nextInt();
-                int result = compute(n);
+                int result = master.compute(n);
                 System.out.printf("Result: %d\n", result);
-            }
-            catch(Exception e){
+            } catch (Exception e) {
                 System.err.println("Server exception: " + e);
                 e.printStackTrace();
             }

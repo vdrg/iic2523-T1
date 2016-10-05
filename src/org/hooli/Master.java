@@ -6,14 +6,12 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class Master implements MasterInterface {
     private final int WORKERS_PER_REQUEST = 3;
 
     private final ArrayList<WorkerInterface> workers;
-    private static Random random = new Random();
+    private static RandomExtended random = new RandomExtended();
 
     public Master() {
         workers = new ArrayList<>();
@@ -32,7 +30,7 @@ public class Master implements MasterInterface {
             this.workers.add(worker);
             System.out.printf("%d/%d workers registered.\n",
                     this.workers.size(), WORKERS_PER_REQUEST);
-            synchronized (this){
+            synchronized (this) {
                 if (this.workers.size() >= WORKERS_PER_REQUEST) {
                     this.notifyAll();
                 }
@@ -60,9 +58,7 @@ public class Master implements MasterInterface {
         if (!enoughWorkers()) {
             throw new IllegalStateException("Not enough workers");
         }
-
-				IntStream indexes = random.ints(WORKERS_PER_REQUEST, 0, this.workers.size() - 1);
-        return indexes.mapToObj(this.workers::get).collect(Collectors.toList());
+        return random.randomChoice(this.workers, WORKERS_PER_REQUEST);
     }
 
     private void removeWorker(WorkerInterface worker) {
@@ -121,7 +117,7 @@ public class Master implements MasterInterface {
         Scanner in = new Scanner(System.in);
         while (true) {
             try {
-                synchronized (master){
+                synchronized (master) {
                     if (!master.enoughWorkers()) {
                         master.wait();
                     }
@@ -147,6 +143,8 @@ public class Master implements MasterInterface {
             registry.bind("Master", stub);
 
             System.out.println("Server ready.");
+            System.out.println("IP:" + InetAddress.getLocalHost().getHostAddress());
+            System.out.println("Port: 1099");
             System.out.println("Waiting for workers...");
         } catch (Exception e) {
             System.err.println("Server exception: " + e.toString());
